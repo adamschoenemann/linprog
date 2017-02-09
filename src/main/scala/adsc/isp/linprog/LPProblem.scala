@@ -26,6 +26,13 @@ case class STDProblem(objective:List[DictVar], constraints:List[STDConstraint]) 
     header + cHeader + rows
   }
 
+
+  def auxiliary(x0:String = "x0"):STDProblem = {
+    val auxConstr = constraints.map(c => c.copy(lhs = DictVar(-1, x0) :: c.lhs))
+    val auxObj = List(DictVar(-1, x0))
+    STDProblem(auxObj, auxConstr)
+  }
+
   def asDict:Dict = asDict("z", "x")
   def asDict(zlab:String, xlab:String):Dict = {
     val newObjective =

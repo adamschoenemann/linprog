@@ -13,11 +13,13 @@ object utils {
 
   def showTerms(terms:List[DictTerm]):String = {
 
-      def rhs2str(rhs:List[DictTerm]):String = rhs match {
-        case Nil => ""
-        case x :: xs if x.isPositive => " + " ++ x.absToString ++ rhs2str(xs)
-        case x :: xs => " - " ++ x.absToString ++ rhs2str(xs)
-      }
+      def rhs2str(rhs:List[DictTerm]):String =
+        rhs.foldLeft ("") ((acc,x) => {
+          if (x.isPositive)
+            " + " + x.absToString + acc
+          else
+            " - " + x.absToString + acc
+        })
       def head2str(h:DictTerm):String =
         if (h.isPositive) h.toString
         else              "-" ++ h.absToString

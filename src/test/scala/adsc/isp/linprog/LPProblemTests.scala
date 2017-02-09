@@ -90,6 +90,40 @@ class LPProblemTests extends FlatSpec with Checkers {
     assert (lpdict == dict)
   }
 
+  it should "calculate the correct auxiliary problem" in {
+    import Relation.syntax._
+    import LPProblem.syntax._
+    import STDProblem.syntax.{constr => sconstr}
+
+    val prob = STDProblem(
+      List(v(1, "x1"), v(-1, "x2"), v(1, "x3")),
+      List(
+        sconstr(List(v(2, "x1"), v(-1, "x2"), v(2, "x3")), 4),
+        sconstr(List(v(2, "x1"), v(-3, "x2"), v(1, "x3")), -5),
+        sconstr(List(v(-1, "x1"), v(1, "x2"), v(-2, "x3")), -1)
+      )
+    )
+
+    debug("original problem")
+    debug(prob + "\n")
+
+    val aux = prob.auxiliary()
+    debug("auxiliary")
+    println(aux)
+
+    val expectAux = STDProblem(
+      List(v(-1, "x0")),
+      List(
+        sconstr(List(v(-1, "x0"), v(2, "x1"), v(-1, "x2"), v(2, "x3")), 4),
+        sconstr(List(v(-1, "x0"), v(2, "x1"), v(-3, "x2"), v(1, "x3")), -5),
+        sconstr(List(v(-1, "x0"), v(-1, "x1"), v(1, "x2"), v(-2, "x3")), -1)
+      )
+    )
+
+    assert (aux == expectAux)
+
+  }
+
   it should "be correct on Spring2015 LP Problem" in {
     import Relation.syntax._
     import LPProblem.syntax._

@@ -11,13 +11,45 @@ import Arbitrary.arbitrary
 
 import Dict.syntax._
 
+import scalaz._
+import Scalaz._
+import adsc.utils.Rational
+
 class SimplexTests extends FlatSpec with Checkers {
 
-  def debug() = println()
-  def debug(msg:Any) = println(msg)
+  // def debug() = println()
+  // def debug(msg:Any) = println(msg)
+
+  def debug() = ()
+  def debug(msg:Any) = () //println(msg)
 
   behavior of "simplex"
 
+  it should "get the right result for the 2016 exam" in {
+
+    val r = Rational(_,_)
+
+    val d1 = Dict(List(
+         row("x4", List(c(8), v(-1,"x1"), v(-1, "x2"), v(1, "x3"))),
+         row("x5", List(c(6), v(-1,"x1"), v(1, "x2"))),
+         row("x6", List(c(100), v(-1,"x3")))
+      ), row("z", List(v(100,"x1"), v(60,"x2"), v(-30,"x3")))
+    )
+
+    // debug(d1)
+
+    val \/-(sol) = Simplex.simplex(d1)
+    debug("Solution")
+    // debug(sol)
+
+    val expected = Dict(List(
+      row("x2", List(c(51), v(r(-1,2), "x4"), v(r(1 , 2),"x5"), v(r(-1,2),"x6"))),
+      row("x1", List(c(57), v(r(-1,2), "x4"), v(r(-1 , 2),"x5"), v(r(-1,2),"x6"))),
+      row("x3", List(c(100), v(-1, "x6")))),
+      row("z", List(c(5760), v(-80,"x4"), v(-20, "x5"), v(-50,"x6")))
+    )
+    assert(sol == expected)
+  }
   it should "get the right result for the 2013 exam!" in {
 
     val d1 = Dict(List(
@@ -52,11 +84,9 @@ class SimplexTests extends FlatSpec with Checkers {
       d2 <- r1
     } yield {
 
-      println(d2)
-
+      debug(d2)
 
       assert (d2 == finalPhase1)
-
 
       val primal = Simplex.fromAuxiliary(d2, z, "x0")
 
@@ -65,18 +95,18 @@ class SimplexTests extends FlatSpec with Checkers {
       for {
         d3 <- r2
       } yield {
-        println(d3)
+        debug(d3)
 
 
         assert (d3 == finalPhase2)
       }
     }
 
-    val bySimpl = Simplex.simplex(d1, "x0", z)
+    val bySimpl = Simplex.simplex(d1, "x0", z, 100)
     assert(bySimpl.isRight)
     for { sol <- bySimpl } yield {
-      println("By simplex")
-      println(sol)
+      debug("By simplex")
+      debug(sol)
       // assert(sol == finalPhase2)
     }
   }

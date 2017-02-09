@@ -69,6 +69,11 @@ trait DictTerm {
 
 }
 case class DictConst(value:Rational) extends DictTerm
+object DictConst {
+  def sum(cs:Seq[DictConst]):DictConst =
+    DictConst(Rational.sum(cs.map(_.value)))
+}
+
 case class DictVar(coef:Rational, id:String) extends DictTerm
 
 case class DictRow(lhs:String, rhs:List[DictTerm]) {
@@ -111,8 +116,9 @@ case class DictRow(lhs:String, rhs:List[DictTerm]) {
   }
 
   def evalZero:Rational = {
-    val as = vars.map(v => (v.id, int2rat(0)))
-    eval(as)
+    DictConst.sum(consts).value
+    // val as = vars.map(v => (v.id, int2rat(0)))
+    // eval(as)
   }
 
   def eval(asment:List[(String,Rational)]):Rational = {
@@ -132,11 +138,11 @@ case class DictRow(lhs:String, rhs:List[DictTerm]) {
   }
 
   def getVarOpt(v:String):Option[DictVar] = {
-      rhs.find ({
-        case DictVar(_,id) if id == v => true
-        case _ => false
-      }).map(_.asInstanceOf[DictVar])
-    }
+    rhs.find ({
+      case DictVar(_,id) if id == v => true
+      case _ => false
+    }).map(_.asInstanceOf[DictVar])
+  }
 
   def getVar(v:String):DictVar = {
     try {
@@ -211,11 +217,16 @@ case class DictRow(lhs:String, rhs:List[DictTerm]) {
   }
 
   def pivot(p:String):DictRow = {
+    // without option, this crashes in ShiftTest
+    // but I don't think this should be option, I think
+    // it is a symptom of something else that is wrong... investigate
     val pv = getVar(p)
     val newLhs = p
     val extraRhs = DictVar(-1, lhs)
     val newRhs = extraRhs :: this.removeVar(p)
-    DictRow(newLhs, newRhs.map(_ / (-1 * pv.coef)))
+    val coef = pv.coef
+    // val coef = pv.map(_.coef).getOrElse(int2rat(1))
+    DictRow(newLhs, newRhs.map(_ / (-1 * coef)))
   }
 
   override def toString:String = {
@@ -281,13 +292,12 @@ case class Dict(rows:List[DictRow], objective:DictRow) {
   def leaving(entering:String):Option[String] = {
     val l2c = rows.map(r =>
       for {
-        h <- r.consts.headOption
-        entering <- r.getVarOpt(entering)
-        coef <- if (entering.coef < 0) Some(entering.coef) else None
+        enteringV <- r.getVarOpt(entering)
+        h = DictConst.sum(r.consts)
+        coef <- if (enteringV.coef < 0) Some(enteringV.coef) else None
       } yield (r.lhs, h.value / coef)
     )
     // return var with smallest variable
-    // println("l2c: " ++ l2c.toString)
     l2c.reduceLeft ((accO, xO) => (accO, xO) match {
       case (None, None)  => None
       case (None, x)     => x

@@ -49,7 +49,7 @@ object Rational {
     }
   }
 
-  def sum(rs:List[Rational]):Rational =
+  def sum(rs:Seq[Rational]):Rational =
     rs.foldLeft[Rational] (0) (_ + _)
 
 }
@@ -115,7 +115,7 @@ case class Rational(num:Int, denom:Int) {
     Math.signum(num) == Math.signum(denom)
 
   def isNegative:Boolean =
-    Math.signum(num) != Math.signum(denom)
+    Math.signum(num) != Math.signum(denom) && !isZero
 
   def isNonNegative:Boolean =
     isPositive || isZero
