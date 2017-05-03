@@ -33,8 +33,8 @@ case class STDProblem(objective:List[DictVar], constraints:List[STDConstraint]) 
     STDProblem(auxObj, auxConstr)
   }
 
-  def asDict:Dict = asDict("z", "x")
-  def asDict(zlab:String, xlab:String):Dict = {
+  def asDict:Dict = asDict("z", "x", 0)
+  def asDict(zlab:String, xlab:String, offset:Int):Dict = {
     val newObjective =
         DictRow(zlab, objective)
 
@@ -42,7 +42,7 @@ case class STDProblem(objective:List[DictVar], constraints:List[STDConstraint]) 
     val slackRows = constraints.zipWithIndex
       .map({
         case (c,i) => {
-          val lhs = xlab ++ (i + nvars + 1).toString
+          val lhs = xlab ++ (i + nvars + 1 + offset).toString
           val rhs = (DictConst(c.rhs)) :: c.lhs.map(_.negate)
           DictRow(lhs, rhs)
         }

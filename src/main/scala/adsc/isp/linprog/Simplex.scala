@@ -24,10 +24,10 @@ object Simplex {
 
     val entering = getEntering(dict)
     val leaving  = getLeaving(dict)
-    // println()
-    // println(dict)
-    // println("entering: " + entering)
-    // println("leaving: " + leaving)
+    println()
+    println(dict)
+    println("entering: " + entering)
+    println("leaving: " + leaving)
     entering match {
       case None => \/- (dict)
       case Some(e) => leaving match {
@@ -44,7 +44,7 @@ object Simplex {
   // I think this method might rely on you already having made the dict
   // to auxiliary if it is actually infeasible
   @annotation.tailrec
-  def phase1(dict:Dict, x0:String = "x0", n:Int = 100):Failure \/ Dict = {
+  def phase1(dict:Dict, n:Int, x0:String = "x0"):Failure \/ Dict = {
     if (n <= 0) {
       -\/(Loops())
     } else {
@@ -58,7 +58,9 @@ object Simplex {
 
       def getLeaving(d:Dict):Option[String] = {
         val zeroed = d.rows.map(r => (r.lhs, r.evalZero))
-        zeroed.find(_._2.isNegative).map(_._1).orElse (d.leaving)
+        val cmp = (r:(String,Rational)) => r._2.toDouble
+        val minKRow = minBySafe(zeroed.filter(_._2.isNegative), cmp)
+        minKRow.map(_._1).orElse (d.leaving)
       }
 
       if (dict.isOptimal && dict.isFeasible)
@@ -71,8 +73,14 @@ object Simplex {
       }
     }
   }
+  private def minBySafe[A, B](ls:List[A], fn : A => B)
+                    (implicit cmp:scala.math.Ordering[B]) : Option[A] =
+    ls match {
+      case Nil => None
+      case _   => Some(ls.minBy(fn)(cmp))
+    }
 
-  def phase2(dict:Dict, n:Int = 100):Failure \/ Dict = {
+  def phase2(dict:Dict, n:Int):Failure \/ Dict = {
     if (n <= 0) {
       -\/ (Loops())
     } else {
@@ -89,7 +97,9 @@ object Simplex {
       else {
         simplexStep (dict, getEntering, getLeaving) match {
           case -\/ (fail)  => -\/ (fail)
-          case \/- (dict2) => phase1(dict2, n = n - 1)
+          // not sure if phase2 or phase1 here
+          // phase 2 makes most sense imo
+          case \/- (dict2) => phase2(dict2, n = n - 1)
         }
       }
     }
@@ -123,7 +133,7 @@ object Simplex {
   // to auxiliary if it is actually infeasible
   def simplex(dict:Dict, x0:String, z:DictRow, n:Int):Failure \/ Dict = {
     if (dict.isFeasible == false) {
-      phase1(dict, x0, n) match {
+      phase1(dict, n, x0) match {
         case -\/ (fail)  => -\/ (fail)
         case \/- (dict2) => {
           phase2(fromAuxiliary(dict2, z, x0), n)

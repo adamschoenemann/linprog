@@ -77,7 +77,7 @@ class SimplexTests extends FlatSpec with Checkers {
     assert(d1.isFeasible == false)
 
 
-    val r1 = Simplex.phase1(d1)
+    val r1 = Simplex.phase1(d1, 100)
     assert(r1.isRight)
 
     for {
@@ -90,7 +90,7 @@ class SimplexTests extends FlatSpec with Checkers {
 
       val primal = Simplex.fromAuxiliary(d2, z, "x0")
 
-      val r2 = Simplex.phase2(primal)
+      val r2 = Simplex.phase2(primal, 100)
       assert (r2.isRight)
       for {
         d3 <- r2
@@ -109,5 +109,44 @@ class SimplexTests extends FlatSpec with Checkers {
       debug(sol)
       // assert(sol == finalPhase2)
     }
+  }
+
+  it should "get the right result for exercise1 in exercises12" in {
+
+    import STDProblem.syntax._
+
+    val lp = STDProblem(
+      List(v(3, "x1"), v(1, "x2")),
+      List(
+        constr(List(v(1, "x1"), v(-1,"x2")), -1),
+        constr(List(v(-1, "x1"), v(-1,"x2")), -3),
+        constr(List(v(2, "x1"), v(1,"x2")), 4)
+      )
+    )
+
+    println(lp)
+    println("dict")
+    val dict = lp.asDict
+    println(dict)
+    println("is feasible? " + dict.isFeasible)
+
+    val aux = lp.auxiliary()
+    println("aux")
+    println(aux)
+
+    val auxd = aux.asDict("w", "x", -1)
+    println("aux dict")
+    println(auxd)
+
+    val \/- (auxsol) = Simplex.phase1(auxd, 100)
+    println("aux sol")
+    println(auxsol)
+
+    println("\nphase2:")
+    val phase2d = Simplex.fromAuxiliary(auxsol, dict.objective, "x0")
+    val \/- (sol) = Simplex.phase2(phase2d, 100)
+    println("solution:")
+    println(sol)
+
   }
 }
